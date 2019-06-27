@@ -7,6 +7,8 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -16,6 +18,8 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 import org.xml.sax.SAXException;
 
 import AutoTest.Models.AppSources;
@@ -141,49 +145,162 @@ public class PageSourceServiceImpl implements PageSourceService {
 		return ret;
 	}
 
-	public boolean testTreeNodeInQueue(AppSources app, AppiumDriver driver, PageSource p, long startTime, long runtime) {
+	public boolean testTreeNodeInQueue(String name, AppSources app, AppiumDriver driver, long startTime, long runtime) {
 		// TODO Auto-generated method stub
 		if((new Date().getTime() - startTime) > runtime) {
 			//超时，则退出
-			
-			
-			
-			
-			
+			driver.quit();
+			System.out.println("超时退出程序！");
+			System.exit(0);
 		}
 		else {
 			//未超时，则继续测试
 			String sourceXml = driver.getPageSource();
 			
-			//如果为登录/注册页面，则需要特殊处理
-			//为注册页面
-			
-			//为登录页面
-			
-			
-			
-			
+			//如果登录/注册的apk，则需要特殊处理
+			/**
+			 * 哔哩哔哩：需要登录；
+			 * 简诗：需要注册+登录；
+			 * */
+			name = name.toLowerCase();
+			if((name.contains("bilibili"))
+					&& (sourceXml.contains("请输入您的哔哩哔哩账号"))) {
+				driver.findElement(By.id("com.hotbitmapgg.ohmybilibili:id/et_username")).clear();
+				driver.findElement(By.id("com.hotbitmapgg.ohmybilibili:id/et_username")).sendKeys("test");;
+				driver.findElement(By.id("com.hotbitmapgg.ohmybilibili:id/et_password")).clear();
+				driver.findElement(By.id("com.hotbitmapgg.ohmybilibili:id/et_password")).sendKeys("test");;
+				driver.findElement(By.id("com.hotbitmapgg.ohmybilibili:id/btn_login")).click();
+			}
+			else if((name.contains("jianshi"))
+					&& (sourceXml.contains("回归文字的本质，回归美好"))
+					&& (sourceXml.contains("邮箱"))) {
+				//先注册简诗
+				driver.findElement(By.id("com.wingjay.android.jianshi:id/email")).clear();
+				driver.findElement(By.id("com.wingjay.android.jianshi:id/email")).sendKeys("test@qq.com");
+				driver.findElement(By.id("com.wingjay.android.jianshi:id/password")).clear();
+				driver.findElement(By.id("com.wingjay.android.jianshi:id/password")).sendKeys("password123");
+				driver.findElement(By.id("com.wingjay.android.jianshi:id/signup")).click();
+				
+				//登录
+				driver.findElement(By.id("com.wingjay.android.jianshi:id/email")).clear();
+				driver.findElement(By.id("com.wingjay.android.jianshi:id/email")).sendKeys("test@qq.com");
+				driver.findElement(By.id("com.wingjay.android.jianshi:id/password")).clear();
+				driver.findElement(By.id("com.wingjay.android.jianshi:id/password")).sendKeys("password123");
+				driver.findElement(By.id("com.wingjay.android.jianshi:id/login")).click();
+			}
 			
 			//将未在AppSources当中的PageSource添加进去
 			PageSource curP = addPageSourceIfNotInSources(app, sourceXml);
-			//测试queue里面的元素
-			testQueue(curP);
+			TreeNode test = curP.getNodes().poll();
+			calculateNewQueue(curP);
+
+			//测试该节点：需要测试步骤+修改该节点的XmlElement的visited为true
+			XmlElement e = test.getE();
+			//对元素进行定位
+			//元素属性
+			String resource_id = e.getResource_id();
+			String _class = e.get_class();
+			String text = e.getText();
+			String content_desc = e.getContent_desc();
+			//定位内容
+			String path_id = resource_id;//id
+			String path_xpath1 = _class + text;//class+text
+			String path_xpath2 = _class + content_desc;//class+content_desc
+			//三个定位方法，哪个是唯一的，就使用那种方法，否则返回
+			List<WebElement> list1 = driver.findElementsById(path_id);
+			List<WebElement> list2 = driver.findElementsByXPath(path_id);
+			List<WebElement> list3 = driver.findElementsByXPath(path_id);
+			if(list1.size() == 1) {
+				//测试WebElement元素
+				testEl(name, app, driver, startTime, runtime, list1.get(0), true);
+			}
+			else if(list2.size() == 1) {
+				//测试WebElement元素
+				testEl(name, app, driver, startTime, runtime, list2.get(0), true);
+			}
+			else if(list3.size() == 1) {
+				//测试WebElement元素
+				testEl(name, app, driver, startTime, runtime, list3.get(0), true);
+			}
+			else {//无法唯一的定位元素，则全部遍历
+				for(int i = 0; i < list1.size(); i++) {//仅仅是遍历list1的，而不是比较厚，遍历元素最小的那个
+					//测试WebElement元素
+					testEl(name, app, driver, startTime, runtime, list1.get(i), false);
+				}
+			}
 			
+			//修改节点为已访问
+			e.setVisited(true);
+			test.setE(e);
 		}
 		
 		return false;
 	}
 
-	private void testQueue(PageSource curP) {
+	//针对不同的TreeNode的name，设计不同的方案
+	/**
+	 * 如果是更加详细的测试代码，
+	 * 那么会针对布局的Node进行更加详细的规划（调整布局内元素的测试顺序等等），
+	 * 但是由于我是queue的顺序来进行Node的测试的，于是这些就没有进行考虑。
+	 * Node的处理包括如下几个部分（android.widget）：
+	 * 	布局方面（滑动）：FrameLayout，LinearLayout，RelativeLayout；
+	 * 	可以输入的组件：EditText；
+	 * 	列表的组件：AlterDialog；
+	 * 	可以按钮的组件：Button，ImageButton，ToggleButton，CheckBox，RadioButton；
+	 * 	选择时间的组件：DatePicker，TimePicker；
+	 * 	其余组件（可以点击的组件（clickable = "true"），则点击）：
+	 * 		AnalogClock，DigitalClock，Chronmeter，ImageView，ProgressBar，TextView，ProgressDialog；
+	 * 	PS：还有很多组件，详见：https://www.yiibai.com/android
+	 * 
+	 * 	已经考虑的组件情况：
+	 * 		1：EditText->输入test;
+	 * 		2：按钮类型->click;
+	 * 		3：...；
+	 * 		4：已出错则回退；
+	 * */
+	private void testEl(String name, AppSources app, AppiumDriver driver, long startTime, long runtime, 
+			WebElement element, boolean uniqueOrNot) {
 		// TODO Auto-generated method stub
-		TreeNode test = curP.getNodes().peek();
-		calculateNewQueue(curP);
+		String tempResource = driver.getPageSource();
 		
-		//测试该节点：需要测试步骤+修改该节点的XmlElement的visited为true
-		//该元素可以输入->sendkey（不检查页面跳转）
-		//该元素可以点击->click（检查页面跳转）
-		if(test.getE().getClickable().equals("true")) {
-			
+		//该元素可以输入->sendkey
+		if(element.getTagName().equals("android.widget.EditText")) {
+			element.sendKeys("test");
+		}
+		//ToggleButton，CheckBox，RadioButton（该元素可以点击）->click
+		else if((element.getTagName().equals("android.widget.ToggleButton"))
+				||(element.getTagName().equals("android.widget.CheckBox"))
+				||(element.getTagName().equals("android.widget.RadioButton"))) {
+			element.click();
+		}
+		//Button，ImageButton（该元素可以点击）->click
+		else if((element.getTagName().equals("android.widget.Button"))
+				||element.getTagName().equals("android.widget.ImageButton")) {
+			element.click();
+		}
+		//该元素可以check->click
+		else if(element.getAttribute("checkable").equals("true")) {
+			element.click();
+		}
+		//该元素可以点击（）click）->click
+		else if(element.getAttribute("clickable").equals("true")) {
+			element.click();
+		}
+		
+		//作用前后页面没有跳转
+		if(pageEqual(xmlToPageSource(driver.getPageSource()), 
+				xmlToPageSource(tempResource))) {
+			//如果是for循环进来的元素，还有for循环中元素待检查，则返回
+			if(!uniqueOrNot)return;
+			//否则就重新测试PageResource中新元素
+			else {
+				testTreeNodeInQueue(name, app, driver, startTime, runtime);
+			}
+		}
+		//作用前后页面跳转
+		else {
+			//重新测试PageResource中新元素
+			testTreeNodeInQueue(name, app, driver, startTime, runtime);
 		}
 	}
 
@@ -195,7 +312,6 @@ public class PageSourceServiceImpl implements PageSourceService {
 		//已经完成一次层序遍历
 		if(ret.isEmpty()) {
 			ret.offer(p.getXmlTree().getRoot());
-			p.setAllVisited(true);
 			p.setNodes(ret);
 		}
 		else {
@@ -265,5 +381,7 @@ public class PageSourceServiceImpl implements PageSourceService {
 
 		return p;
 	}
+
+	
 
 }

@@ -23,8 +23,9 @@ public interface PageSourceService {
 	/**
 	 * 测试当前PageSource的待测节点们：nodes的第一个节点;
 	 * 会调用calculateNewQueue同时更新nodes;
+	 * PS:name为特殊的apk，需要注册登录的特殊操作；
 	 * */
-	public boolean testTreeNodeInQueue(AppSources app, AppiumDriver driver, PageSource p, long startTime, long runtime);
+	public boolean testTreeNodeInQueue(String name, AppSources app, AppiumDriver driver, long startTime, long runtime);
 
 	/**
 	 * 计算获得PageSource待测节点：nodes，

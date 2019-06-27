@@ -177,7 +177,7 @@ public class XmlElement {
 		this.instance = instance;
 	}
 
-	public boolean isVisited() {
+	public boolean getVisited() {
 		return visited;
 	}
 

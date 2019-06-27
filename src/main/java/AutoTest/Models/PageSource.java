@@ -7,14 +7,12 @@ import java.util.Queue;
 public class PageSource {
 	public Tree xmlTree;
 	public Queue<TreeNode> nodes;//存储待测的节点
-	public boolean allVisited;
 	
 	public PageSource(Tree xmlTree) {
 		this.xmlTree = xmlTree;
 		Queue<TreeNode> nodes2 = new LinkedList<TreeNode>();
 		nodes.offer(xmlTree.getRoot());
 		this.nodes = nodes2;
-		this.allVisited = false;
 	}
 	
 	public Tree getXmlTree() {
@@ -29,12 +27,4 @@ public class PageSource {
 	public void setNodes(Queue<TreeNode> nodes) {
 		this.nodes = nodes;
 	}
-	public boolean getAllVisited() {
-		return allVisited;
-	}
-	public void setAllVisited(boolean allVisited) {
-		this.allVisited = allVisited;
-	}
-	
-	
 }
