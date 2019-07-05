@@ -25,7 +25,7 @@ public interface PageSourceService {
 	 * 会调用calculateNewQueue同时更新nodes;
 	 * PS:name为特殊的apk，需要注册登录的特殊操作；
 	 * */
-	public boolean testTreeNodeInQueue(String name, AppSources app, AppiumDriver driver, long startTime, long runtime);
+	public void testTreeNodeInQueue(String name, AppSources app, AppiumDriver driver, long startTime, long runtime);
 
 	/**
 	 * 计算获得PageSource待测节点：nodes，
@@ -33,11 +33,11 @@ public interface PageSourceService {
 	 * 如果allVisited为true，则依旧循环访问；
 	 * 下一个节点的顺序：按照层次遍历来进行
 	 * */
-	public void calculateNewQueue(PageSource p);
+	public PageSource calculateNewQueue(PageSource p);
 	
 	/**
-	 * 返回：当前xml对应的PageSource，
+	 * 返回：AppSources，
 	 * 如果不包含，则将当前PageSource添加到AppSources sources当中
 	 * */
-	public PageSource addPageSourceIfNotInSources(AppSources sources, String xml);
+	public Object[] addPageSourceIfNotInSources(AppSources sources, String xml);
 }

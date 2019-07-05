@@ -15,6 +15,8 @@ import java.util.concurrent.TimeUnit;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.SystemClock;
 
+import AutoTest.Services.*;
+import AutoTest.Models.*;
 import io.appium.java_client.AppiumDriver;
 
 
@@ -23,11 +25,11 @@ public class Main {
 	/**
 	 * 所有和AppiumDriver相关的操作都必须写在该函数中
 	 * 
-	 * @param driver
+	 * @param driver 
 	 * @param runtime 
 	 * @param startTime 
 	 */
-	public void test(AppiumDriver driver, long startTime, long runtime) {
+	public void test(String appPath, AppiumDriver driver, long startTime, long runtime) {
 		try {
 			Thread.sleep(6000); // 等待6s，待应用完全启动
 		} catch (InterruptedException e) {
@@ -38,13 +40,9 @@ public class Main {
 		/*
 		 * 余下的测试逻辑请按照题目要求进行编写
 		 */
-		testPage(driver, driver.getPageSource());
-	}
-	
-	//对driver.getPageSource()的元素进行测试
-	public void testPage(AppiumDriver driver, String source) {
-		System.out.println(driver.getPageSource());
-		
+		PageSourceService pss = new PageSourceServiceImpl();
+		AppSources app = new AppSources();
+		pss.testTreeNodeInQueue(appPath, app, driver, startTime, runtime);
 	}
 
 	/**
@@ -58,14 +56,14 @@ public class Main {
 	public AppiumDriver initAppiumTest(String appPath, String deviceUdid, String port) {
 		AppiumDriver driver = null;
 		File classpathRoot = new File(System.getProperty("user.dir"));
-		File app = new File(appPath);
+		File app = new File(classpathRoot, appPath);
 
 		// 设置自动化相关参数
 		DesiredCapabilities capabilities = new DesiredCapabilities();
 		capabilities.setCapability("browserName", "");
 		capabilities.setCapability("platformName", "Android");
 		capabilities.setCapability("deviceName", "Android Emulator");
-		//capabilities.setCapability("udid", deviceUdid);
+		capabilities.setCapability("udid", deviceUdid);//设置设备号
 		
 		// 设置apk路径
 		String apkAbPath = app.getAbsolutePath();
@@ -137,14 +135,15 @@ public class Main {
 	}
 
 	public void start(String[] args) {
+		
 		// 输入命令行
 		ArrayList<String> arr = new ArrayList();
-		if(arr.size() == 4) {
+		if(args.length == 4) {
 			arr = inputCmd(args);
 		}
 		else {
 			System.out.println("参数输入错误！");
-			return;
+			System.exit(0);;
 		}
 		long runtime = Long.parseLong(arr.get(3));
 		runtime = runtime * 1000;//转换成毫秒计时
@@ -154,8 +153,15 @@ public class Main {
 		// 初始化appium
 		AppiumDriver driver = initAppiumTest(arr.get(0), arr.get(1), arr.get(2));
 		
+		/*
+		String appPath = "apk/bilibili.apk";
+		AppiumDriver driver = initAppiumTest(appPath, "udid", "4723");
+		
 		// 对apk进行测试
-		test(driver, startTime, runtime);
+		long startTime = new Date().getTime();
+		long runtime = 3600 * 1000;
+		*/
+		test(arr.get(0), driver, startTime, runtime);
 	}
 
 	
@@ -164,5 +170,6 @@ public class Main {
 		main.start(args);
 		//System.out.println("test");
 	}
+	
 
 }

@@ -1,6 +1,4 @@
 Manifest-Version: 1.0
-Class-Path: lib/gson-2.8.4.jar
-  lib/java-client-1.3.0.jar
-  lib/selenium-java-client-2.42.1.jar
-  lib/dom4j-1.6.jar
-Main-Class: com.mooctest.Main
+Class-Path: lib/dom4j-1.6.jar lib/gson-2.8.4.jar lib/java-client-1.3.0.jar lib/selenium-java-client-2.42.1.jar
+Main-Class: AutoTest.AutoTest.Main
+

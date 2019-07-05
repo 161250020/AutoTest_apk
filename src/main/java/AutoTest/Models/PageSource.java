@@ -5,16 +5,26 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class PageSource {
-	public Tree xmlTree;
-	public Queue<TreeNode> nodes;//存储待测的节点
+	private String xml;
+	private Tree xmlTree;
+	private Queue<TreeNode> nodes;//存储待测的节点
 	
-	public PageSource(Tree xmlTree) {
+	public PageSource(String xml, Tree xmlTree) {
+		this.xml = xml;
 		this.xmlTree = xmlTree;
 		Queue<TreeNode> nodes2 = new LinkedList<TreeNode>();
-		nodes.offer(xmlTree.getRoot());
+		nodes2.offer(xmlTree.getRoot());
 		this.nodes = nodes2;
 	}
 	
+	public String getXml() {
+		return xml;
+	}
+
+	public void setXml(String xml) {
+		this.xml = xml;
+	}
+
 	public Tree getXmlTree() {
 		return xmlTree;
 	}
